@@ -1,0 +1,9 @@
+{ 
+    "mqtt": "mqtt.nirima.com",
+    "elements": [
+      { "type": "state", "id":"main", "pin": 4  },
+      { "type": "meter", "id":"leccy", "pin": 5, "debounce": 100 } 
+    ] 
+  }
+  
+  
