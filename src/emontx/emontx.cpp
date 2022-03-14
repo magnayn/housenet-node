@@ -4,7 +4,7 @@
 
 
 /// TODO: EmonTX::EmonTX() : serialPort(Serial2)
-EmonTX::EmonTX() : serialPort(Serial1)
+EmonTX::EmonTX() : serialPort(Serial2)
 {
 	_function = nullptr;
 	Serial.setTimeout(0);

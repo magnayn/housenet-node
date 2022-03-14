@@ -73,7 +73,8 @@ HousenetNode::HousenetNode() : server(80),
     Serial.println(GetStatus());
 
 
-    
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+
     
     // Serve files in directory "/www/" when request url starts with "/"
     // Request to the root or none existing files will try to server the defualt
@@ -83,7 +84,7 @@ HousenetNode::HousenetNode() : server(80),
  // server.serveStatic("/", LITTLEFS, "/www/")
    //       .setDefaultFile("index.html");
 
-   server.serveStatic("/", LITTLEFS, "/www/").setDefaultFile("index.html");
+   
    // server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");
 /*
     server.on("/housenet/pulse", HTTP_GET, [&](AsyncWebServerRequest *request) {
@@ -176,31 +177,62 @@ HousenetNode::HousenetNode() : server(80),
 
 
     server.on("/housenet/elements", HTTP_GET, [&](AsyncWebServerRequest *request) {
-        // Get a list of elements        
-        DynamicJsonDocument doc(1024);
-        JsonArray array = doc.to<JsonArray>();
+        
+      
+        String url = request->url();
+        Serial.println(url);
 
-        for(auto const& element:  elements) {
+        if(url.startsWith("/housenet/elements/") )
+        {
+            // Process a particular sub-element only for the GET
+            String rest = url.substring(19);
+            int path = rest.indexOf('/');
+            int path1 = rest.indexOf('/',path+1);
 
-            JsonObject obj1 = array.createNestedObject();
+            String type = rest.substring(0,path);
+            String id = rest.substring(path+1,path1-1);
+            
+            String rData = rest.substring(path1+1);
 
-            String type = element->getType();
-            String id   = element->GetId();
-           
-            obj1["type"] = type;
-            obj1["id"]   = id;
+            HousenetElement * matchedelement = FindElement(type, id);
+            
+            if( matchedelement == nullptr ) {
+                request->send(404, "text/plain", "Not found");
+                return;
+            }
 
+            request->send(200, "text/json", matchedelement->GetState(rData));
+        } else {        
+            // Get a list of elements        
+            DynamicJsonDocument doc(1024);
+            JsonArray array = doc.to<JsonArray>();
+
+            for(auto const& element:  elements) {
+
+                JsonObject obj1 = array.createNestedObject();
+
+                String type = element->getType();
+                String id   = element->GetId();
+            
+                obj1["type"] = type;
+                obj1["id"]   = id;
+
+            }
+            
+            String data;
+            serializeJson(doc, data);
+            
+            request->send(200, "text/json", data);
         }
-        
-        String data;
-        serializeJson(doc, data);
-        
-        request->send(200, "text/json", data);
     });
 
-    server.onNotFound([&](AsyncWebServerRequest *request){
-
-        String url = request->url();
+     server.on("/housenet/elements", HTTP_POST, 
+    [&](AsyncWebServerRequest *request) {
+       
+    },    
+    NULL,
+    [&](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+                  String url = request->url();
 
         // /housenet/elements/{type}/{id}
         if(url.startsWith("/housenet/elements/") )
@@ -209,35 +241,34 @@ HousenetNode::HousenetNode() : server(80),
             int path = rest.indexOf('/');
             int path1 = rest.indexOf('/',path+1);
 
-            String type = rest.substring(0,path-1);
+            String type = rest.substring(0,path);
             String id = rest.substring(path+1,path1-1);
             
             String rData = rest.substring(path1+1);
 
-            HousenetElement * matchedelement = nullptr;
-
-            for(auto const& element:  elements) {
-                if( element->getType().equalsIgnoreCase(type) && element->GetId().equalsIgnoreCase(id))
-                    matchedelement = element;
-            }
+            HousenetElement * matchedelement = FindElement(type, id);
 
             if( matchedelement == nullptr ) {
                 request->send(404, "text/plain", "Not found");
                 return;
             }
+ 
+            if(request->method() == HTTP_POST) {
+                
+                // POSTED DATA
 
-            if(request->method() == HTTP_GET) {
-                request->send(200, "text/json", matchedelement->GetState(rData));
-            } else if(request->method() == HTTP_POST) {
-                // TODO: Get data.
-                matchedelement->SetState(rData, "");
+                matchedelement->SetState(rData, String((char*)data));
                 request->send(200, "text/json", "OK");
             }
 
         }
         request->send(404, "text/plain", "Not found");
+          
     });
     
+    
+    
+    server.serveStatic("/", LITTLEFS, "/www/").setDefaultFile("index.html");
 
     ws.onEvent([&](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
         if (type == WS_EVT_CONNECT)
@@ -618,6 +649,43 @@ ICACHE_RAM_ATTR HousenetMeterElement::HousenetMeterElement(HousenetNode *parent,
     
 }
 
+String HousenetMeterElement::GetState( String channel ) {
+    DynamicJsonDocument doc(256);
+
+    doc["pulses"] = pulse_meter->counter.value;
+    doc["meter_initialized"]  = pulse_meter->meter.initialized;
+    doc["meter"]  = pulse_meter->meter.value;
+    
+    String data;
+    serializeJson(doc, data);
+    return data;
+}
+
+void HousenetMeterElement::SetState( String channel, String value ) {
+  
+        const char* txtValue = value.c_str();
+        bool force = false;        
+        int v = 0;
+
+        if( txtValue[0] == '=' ) {
+            force = true;
+            txtValue = txtValue + 1;
+        } 
+
+        v = atoi(txtValue);
+
+        
+        // If we _force_ a value ( =1000 ) it will set the value regardless.
+        // If we intialize, it will ignore if it already has bee initalised.
+
+        if( force )
+            pulse_meter->meter.setValue(v);
+        else {
+            // treat as an increment, or a decrement to the value.
+            pulse_meter->meter.setValue( pulse_meter->meter.value + v);
+        }
+}
+
 void HousenetMeterElement::process() {
     if( meter_updated ) {
         pulse( pulse_meter );
@@ -667,14 +735,6 @@ void HousenetMeterElement::pulse(const PulseMeter *pulseMeter)
     }
 }
 
-/*
-for (int i = 0; i < pulse_meter_count; i++)
-    {
-        pulse_meter[i].onChange([&](const PulseMeter *pc) { 
-            meters_updated.push(pc);            
-            });
-    }
-    */
 
 //==============================================================================================================
 // State
@@ -704,6 +764,16 @@ void HousenetStateElement::process() {
          publish("value", pinState.state?"0":"1");
          Serial.println("Process Done");
     }
+}
+
+String HousenetStateElement::GetState( String channel ) {
+    DynamicJsonDocument doc(256);
+
+    doc["state"] = pinState.state?false:true;
+    
+    String data;
+    serializeJson(doc, data);
+    return data;
 }
 
 //==============================================================================================================

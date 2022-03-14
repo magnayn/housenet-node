@@ -154,6 +154,8 @@ class HousenetMeterElement : public HousenetElement {
 
         virtual void OnMessage(String& topic, String& value);
         
+        virtual String GetState( String channel );
+        virtual void   SetState( String channel, String data );
     protected:
         void pulse(const PulseMeter *pc);
 
@@ -192,7 +194,8 @@ class HousenetStateElement : public HousenetElement {
             return TYPE;
         }
         virtual void process();
-
+        
+        virtual String GetState( String channel );
         void callback(const PinState* state);
     protected:
      

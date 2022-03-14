@@ -94,7 +94,15 @@ HouseNetNodes can have multiple elements - an element is an interface of some so
 These are identified by their element 'type'
 An element can have multiple channels (e.g: onewire may have many things connected to it).
 
+### Namespaces
 
+#### MQTT
+
+/housenet/{node_id}/{type}/{id}/{channel}
+
+#### HTTP
+
+/housenet/elements/{type}/{id}
 
   
  

@@ -10,6 +10,7 @@ class Preferences
         void begin(String a, bool b);
         String getString(String key, String def);
         void putString(String key, String value);
+        void end();
 };
 
 
