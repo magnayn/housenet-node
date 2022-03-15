@@ -29,18 +29,34 @@ public:
 
 const String HousenetOpenthermElement::TYPE = "opentherm";
 
-HousenetOpenthermElement::HousenetOpenthermElement(HousenetNode *parent, String id, uint8_t pinIn, uint8_t pinOut) 
+ICACHE_RAM_ATTR HousenetOpenthermElement::HousenetOpenthermElement(HousenetNode *parent, String id, uint8_t pinIn, uint8_t pinOut) 
     : HousenetElement(parent, id), ot((int)pinIn, (int)pinOut)
 {
 
     ot.begin(
-    [&](void) -> void {
+      [&](void) -> void {
         ot.handleInterrupt(); 
     });
-                    
+                 
+}
+
+String HousenetOpenthermElement::GetState( String channel ) {
+    DynamicJsonDocument doc(256);
+
+    doc["setpoint"] = setpoint;
+    
+    String data;
+    serializeJson(doc, data);
+    return data;
+}
+
+void HousenetOpenthermElement::SetState( String channel, String value ) {
+      setpoint = atof(value.c_str());
 }
 
 void HousenetOpenthermElement::process() {
+
+
      new_ts = millis();
 
 
@@ -67,16 +83,18 @@ void HousenetOpenthermElement::process() {
   }
   if (responseStatus == OpenThermResponseStatus::NONE) {
     Serial.println("Error: OpenTherm is not initialized");
+    return;
   }
   else if (responseStatus == OpenThermResponseStatus::INVALID) {
     Serial.println("Error: Invalid response " + String(response, HEX));
+    return;
   }
   else if (responseStatus == OpenThermResponseStatus::TIMEOUT) {
     Serial.println("Error: Response timeout");
+    return;
   }
-
+  
   // Various!
-  unsigned long value;
   char data[50];
 
   thisReading.temperature = ot.getBoilerTemperature();
@@ -89,6 +107,7 @@ void HousenetOpenthermElement::process() {
  //  publish_f88(OpenThermMessageID::TSet,   "ch/setpoint");
 
   sprintf(data, "%.2f", setpoint);
+
   publish("ch/setpoint/controller", data);
 
   thisReading.relModLevel = publish_f88(OpenThermMessageID::RelModLevel, "modulation_rate");
@@ -101,7 +120,7 @@ void HousenetOpenthermElement::process() {
   publish_raw(OpenThermMessageID::Tret,         "ch/return_temperature/raw"); 
   
  // publish_s16(OpenThermMessageID::Texhaust,         "exhaust/temperature");
-  
+
 
   publish_u16(OpenThermMessageID::BurnerStarts,             "burner/starts");
   // publish_u16(OpenThermMessageID::CHPumpStarts,             "ch/pump/starts");
@@ -123,23 +142,25 @@ void HousenetOpenthermElement::process() {
   // Temp
   
   ts = new_ts;
+   
   }
 }
 
-unsigned long HousenetOpenthermElement::publish_f88(OpenThermMessageID id, char* topic) {
-  char data[30];
+unsigned long HousenetOpenthermElement::publish_f88(OpenThermMessageID id, const char* topic) {
+
+  char data[128];
   unsigned long value = ot.sendRequest(ot.buildRequest(OpenThermMessageType::READ_DATA, id,0));
   
   OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
   if (responseStatus == OpenThermResponseStatus::SUCCESS) {   
 
      // Isn't actually a temperature, doesn't really matter it's f8.8
-     sprintf(data, "%.2f", ot.getFloat(value) );
+     snprintf(data, 128, "%.2f", ot.getFloat(value) );
       
      publish(topic, data );
      return value;
   } else {
-      sprintf(data, "Channel %s Error %s", topic, ot.statusToString(responseStatus) );
+      snprintf(data, 128, "Channel %s Error %s", topic, ot.statusToString(responseStatus) );
       publish("error", data);
       return -1;
   }
@@ -147,8 +168,9 @@ unsigned long HousenetOpenthermElement::publish_f88(OpenThermMessageID id, char*
 }
 
 
-int16_t HousenetOpenthermElement::publish_s16(OpenThermMessageID id, char* topic) {
-  char data[30];
+int16_t HousenetOpenthermElement::publish_s16(OpenThermMessageID id, const char* topic) {
+
+  char data[128];
   unsigned long value = ot.sendRequest(ot.buildRequest(OpenThermMessageType::READ_DATA, id,0));
   
   OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
@@ -157,31 +179,31 @@ int16_t HousenetOpenthermElement::publish_s16(OpenThermMessageID id, char* topic
     int16_t v2 = (int16_t)ot.getUInt(value);
 
      // Isn't actually a temperature, doesn't really matter it's f8.8
-     sprintf(data, "%d", v2 );
+     snprintf(data, 128,"%d", v2 );
       
      publish(topic, data );
      return v2;
   } else {
-      sprintf(data, "Channel %s Error %s", topic, ot.statusToString(responseStatus) );
+      snprintf(data, 128, "Channel %s Error %s", topic, ot.statusToString(responseStatus) );
       publish("error", data);
       return -1;
   }
   
 }
 
-unsigned long HousenetOpenthermElement::publish_u16(OpenThermMessageID id, char* topic) {
-  char data[30];
+unsigned long HousenetOpenthermElement::publish_u16(OpenThermMessageID id, const char* topic) {
+  char data[128];
   unsigned long value = ot.sendRequest(ot.buildRequest(OpenThermMessageType::READ_DATA, id,0));
   
   OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
   if (responseStatus == OpenThermResponseStatus::SUCCESS) {   
 
-     sprintf(data, "%u", ot.getUInt(value) );
+     snprintf(data, 128, "%u", ot.getUInt(value) );
       
      publish(topic, data );
      return value;
   } else {
-      sprintf(data, "Channel %s Error %s", topic, ot.statusToString(responseStatus) );
+      snprintf(data, 128, "Channel %s Error %s", topic, ot.statusToString(responseStatus) );
       publish("error", data);
       return -1;
   }
@@ -189,18 +211,19 @@ unsigned long HousenetOpenthermElement::publish_u16(OpenThermMessageID id, char*
 }
 
 
-void HousenetOpenthermElement::publish_raw(OpenThermMessageID id, char* topic) {
-  char data[30];
-  unsigned long value = ot.sendRequest(ot.buildRequest(OpenThermMessageType::READ_DATA, id,0));
+void HousenetOpenthermElement::publish_raw(OpenThermMessageID id, const char* topic) {
   
+  char data[128];
+  unsigned long value = ot.sendRequest(ot.buildRequest(OpenThermMessageType::READ_DATA, id,0));
+
   OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
   if (responseStatus == OpenThermResponseStatus::SUCCESS) {   
 
-     sprintf(data, "%x %x", ot.getUInt(value), value );
+     snprintf(data, 128, "%x %lx", ot.getUInt(value), value );
       
      publish(topic, data );
   } else {
-      sprintf(data, "Channel %s Error %s", topic, ot.statusToString(responseStatus) );
+      snprintf(data, 128, "Channel %s Error %s", topic, ot.statusToString(responseStatus) );
       publish("error", data);
   }
   

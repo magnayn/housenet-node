@@ -58,21 +58,20 @@ protected:
     //PulseMeter* getMeterById(String id);
     HousenetElement* FindElement(String& type, String& id);
 
+public: 
+    String station_id;
+
 public:
     AsyncWebServer server;
+
+    bool useMqtt;
+
+
     MQTTClient client;
 
     AsyncWebSocket ws, ws_data;
     WiFiClient net;
-    
- //   std::queue<const PulseMeter*> meters_updated;
-
-/*
-    PulseMeter*   pulse_meter = nullptr;
-    int           pulse_meter_count;
-*/
-    String station_id;
-
+       
     String ip_addr;
 
     bool processing_enabled = true;
@@ -125,12 +124,14 @@ class HousenetOpenthermElement : public HousenetElement {
         virtual String getType() {
             return TYPE;
         }
+        virtual String GetState( String channel );
+        virtual void   SetState( String channel, String data );
     protected:
     
-        unsigned long publish_f88(OpenThermMessageID id, char* topic);
-        int16_t       publish_s16(OpenThermMessageID id, char* topic); 
-        unsigned long publish_u16(OpenThermMessageID id, char* topic);
-        void          publish_raw(OpenThermMessageID id, char* topic);
+        unsigned long publish_f88(OpenThermMessageID id, const char* topic);
+        int16_t       publish_s16(OpenThermMessageID id, const char* topic); 
+        unsigned long publish_u16(OpenThermMessageID id, const char* topic);
+        void          publish_raw(OpenThermMessageID id, const char* topic);
         
     private:
         OpenTherm ot;

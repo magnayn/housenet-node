@@ -42,6 +42,4 @@ void loop()
 
     node->process();
 
-    // Always do the OTA
-    AsyncElegantOTA.loop();
 }
