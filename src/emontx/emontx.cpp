@@ -2,12 +2,15 @@
 #include "emontx.h"
 #include "debugging.h"
 
+#define RXD2 16
+#define TXD2 17
 
 /// TODO: EmonTX::EmonTX() : serialPort(Serial2)
 EmonTX::EmonTX() : serialPort(Serial2)
 {
 	_function = nullptr;
-	Serial.setTimeout(0);
+	serialPort.begin(115200,SERIAL_8N1,RXD2, TXD2);
+	serialPort.setTimeout(0);
 }
 
 void EmonTX::process()

@@ -21,7 +21,7 @@
 #include "time_utils.h"
 
 #include <queue>
-#include "opentherm/OpenTherm.h"
+
 #include "sensor/onewirebus.h"
 #include "sensor/pinstate.h"
 #include <functional>
@@ -114,31 +114,7 @@ class HousenetElement {
         const String        id;
 };
 
-class HousenetOpenthermElement : public HousenetElement {
-    public:
-        static const String TYPE;
 
-    public:
-        HousenetOpenthermElement(HousenetNode *parent, String id, uint8_t pinIn, uint8_t pinOut);
-        virtual void process();
-        virtual String getType() {
-            return TYPE;
-        }
-        virtual String GetState( String channel );
-        virtual void   SetState( String channel, String data );
-    protected:
-    
-        unsigned long publish_f88(OpenThermMessageID id, const char* topic);
-        int16_t       publish_s16(OpenThermMessageID id, const char* topic); 
-        unsigned long publish_u16(OpenThermMessageID id, const char* topic);
-        void          publish_raw(OpenThermMessageID id, const char* topic);
-        
-    private:
-        OpenTherm ot;
-
-        unsigned long ts = 0, new_ts = 0; 
-        float setpoint = 60;
-};
 
 
 class HousenetMeterElement : public HousenetElement {

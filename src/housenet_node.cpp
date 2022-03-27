@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "platform.h"
 #include "housenet_node.h"
+#include "elements/housenet_opentherm.h"
 #include "debugging.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
