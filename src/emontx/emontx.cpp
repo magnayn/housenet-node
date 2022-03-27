@@ -8,6 +8,9 @@
 /// TODO: EmonTX::EmonTX() : serialPort(Serial2)
 EmonTX::EmonTX() : serialPort(Serial2)
 {
+	Serial.println("Make EmonTX");
+
+
 	_function = nullptr;
 	serialPort.begin(115200,SERIAL_8N1,RXD2, TXD2);
 	serialPort.setTimeout(0);

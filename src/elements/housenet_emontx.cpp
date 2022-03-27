@@ -37,6 +37,8 @@ void HousenetEmonTXElement::process() {
 
 void HousenetEmonTXElement::processEmon(const EmonMessage &msg)
 {
+    Serial.println("emontx process");
+
     // EMONTX value
     char topic[128];
     char value[64];
