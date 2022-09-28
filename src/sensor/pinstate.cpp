@@ -16,6 +16,7 @@ ICACHE_RAM_ATTR void interrupt_ps(void *arg)
 
 PinState::PinState(uint8_t pin ) : pin(pin)
 {    
+    pinMode(pin, INPUT); 
     pinMode(pin, INPUT_PULLUP);    
 
     enable();

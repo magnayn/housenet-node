@@ -13,6 +13,7 @@ HousenetStateElement::HousenetStateElement(HousenetNode *parent, String id, uint
 : HousenetElement(parent, id), pinState(pin)
 {
 
+    
     pinState.onChange([&](const PinState* state)->void{        
         callback(state);
     });

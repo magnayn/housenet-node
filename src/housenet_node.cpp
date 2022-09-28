@@ -120,6 +120,17 @@ HousenetNode::HousenetNode() : server(80),
         server.addHandler(handler);
         */
 
+       server.on("/debug", HTTP_GET, [&](AsyncWebServerRequest *request)
+        {
+            Serial.println("Debug");
+        });
+
+server.on("/reset", HTTP_POST, [&](AsyncWebServerRequest *request)
+              {
+        ESP.restart();
+        
+        });
+
     server.on("/housenet/config", HTTP_GET, [&](AsyncWebServerRequest *request)
               {
         Serial.println("Get Config");
@@ -278,7 +289,7 @@ HousenetNode::HousenetNode() : server(80),
             request->send(404, "text/plain", "Not found");
         });
 
-    server.serveStatic("/", LITTLEFS, "/www/").setDefaultFile("index.html");
+    server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");
 
     ws.onEvent([&](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
                {
@@ -331,9 +342,6 @@ HousenetNode::HousenetNode() : server(80),
     {
         Serial.print(F("deserializeJson() failed: "));
         Serial.println(error.f_str());
-
-        // TODO: Need to fix this.
-        setupMqtt("192.168.0.88");
     }
     else
     {
@@ -396,6 +404,10 @@ void HousenetNode::CreateElements(JsonArray array)
         else if (type.equalsIgnoreCase(HousenetOneWireElement::TYPE))
         {
             element = new HousenetOneWireElement(this, id, obj.getMember("pin").as<int>());
+        }  
+        else if (type.equalsIgnoreCase(HousenetGpioTriggerElement::TYPE))
+        {
+            element = new HousenetGpioTriggerElement(this, id, obj.getMember("pin").as<int>());
         }
 
         if (element != nullptr)
@@ -418,6 +430,8 @@ HousenetElement *HousenetNode::FindElement(String &type, String &id)
         if (element->getType().equalsIgnoreCase(type) && element->GetId().equalsIgnoreCase(id))
             return element;
     }
+
+     Serial.println("Fail");
     return nullptr;
 }
 
@@ -471,6 +485,8 @@ void HousenetNode::setupMqtt(String host)
                      {
                          Serial.println("Incoming " + theTopic);
 
+                         
+
                          char topic[128];
                          sprintf(topic, "%s", theTopic.c_str());
 
@@ -483,6 +499,13 @@ void HousenetNode::setupMqtt(String host)
                          char *node = strtok(NULL, "/");
                          if (node == nullptr)
                              return;
+
+                        String theNode(node);
+                        if( theNode.equalsIgnoreCase("info") )
+                        {
+                            Serial.println("NodeInfo");
+                            return;
+                        }
 
                          const char *type = strtok(NULL, "/");
                          if (type == nullptr)
@@ -516,9 +539,6 @@ void HousenetNode::connectMqtt()
 
     if (client.connect(station_id.c_str()))
     {
-
-        Serial.println("MQTT CONNECT");
-
         // publish data
         char topic[128];
 
@@ -532,11 +552,11 @@ void HousenetNode::connectMqtt()
         client.publish(topic, ip_addr);
 
         client.subscribe("/housenet/" + station_id + "/#");
+
+        // Sub to announcements
+        client.subscribe("/housenet/info/#");
     }
-    else
-    {
-        Serial.println("MQTT FAIL CONNECT");
-    }
+    
 }
 
 void HousenetNode::process()
@@ -572,8 +592,10 @@ void HousenetNode::publishStatus()
 {
     char topic[128];
 
-    sprintf(topic, "/housenet/%s/node_info/status", station_id.c_str());
+    sprintf(topic, "/housenet/info/%s", station_id.c_str());
     String theStatus = GetStatus();
-    if( useMqtt )
+    if( useMqtt ) {
         client.publish(topic, theStatus);
+    }
+
 }

@@ -14,11 +14,11 @@ void setup()
     Serial.begin(115200);
     Serial.println("Setup.. ");
 
-    if (LITTLEFS.begin())
+    if (LittleFS.begin())
     {
         Serial.println("LittleFS OK");
         Serial.println(
-            LITTLEFS.exists("/www/index.html") ? "exists" : "not");
+            LittleFS.exists("/www/index.html") ? "exists" : "not");
     }
     else
     {

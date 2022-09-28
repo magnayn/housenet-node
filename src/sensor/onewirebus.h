@@ -4,7 +4,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <functional>
-
+#include <vector>
 class OneWireBus;
 
 typedef std::function<void(const OneWireBus *item)> OneWireBusHandlerFunction;

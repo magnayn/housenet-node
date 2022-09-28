@@ -89,9 +89,12 @@ class HousenetElement {
         {
             
         }
+
+        // Process is called on each element as a part of the main loop.
         virtual void process(){
 
         }
+        // Override to return a type name.
         virtual String getType() = 0;
 
         virtual void OnMessage(String& topic, String& value) {
@@ -197,6 +200,22 @@ class HousenetOneWireElement : public HousenetElement {
         OneWireBus bus;
         bool ready;
         TimeUtils timeUtils;
+};
+
+class HousenetGpioTriggerElement : public HousenetElement {
+    public:
+
+        static const String TYPE;
+     
+     public:
+        HousenetGpioTriggerElement(HousenetNode *parent, String id, uint8_t pin);
+        virtual void OnMessage(String& topic, String& value);
+        virtual String getType() {
+            return TYPE;
+        }
+
+    private:
+        uint8_t  m_pin;
 };
 
 

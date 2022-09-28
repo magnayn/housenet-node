@@ -5,21 +5,34 @@
 #define RXD2 16
 #define TXD2 17
 
+#ifdef ESP32
+  #define SERIAL_PORT Serial2
+#else
+  #define SERIAL_PORT Serial1
+#endif
+
+
 /// TODO: EmonTX::EmonTX() : serialPort(Serial2)
-EmonTX::EmonTX() : serialPort(Serial2)
+EmonTX::EmonTX() : serialPort(SERIAL_PORT)
 {
 	Serial.println("Make EmonTX");
 
-
 	_function = nullptr;
-	serialPort.begin(115200,SERIAL_8N1,RXD2, TXD2);
+
+#ifdef ESP32
+  serialPort.begin(115200,SERIAL_8N1,RXD2, TXD2);
+#else
+  serialPort.begin(115200,SERIAL_8N1);
+#endif
+
+	
 	serialPort.setTimeout(0);
 }
 
 void EmonTX::process()
 {
 	
-	while (Serial.available())
+	while (serialPort.available())
 	{
 		Serial.println("Serial Process");
 

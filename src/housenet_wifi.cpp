@@ -1,16 +1,21 @@
 #include <Arduino.h>
 
 #define _ESPASYNC_WIFIMGR_LOGLEVEL_    4
-#define HTTP_PORT 8880
-#define HTTP_PORT_TO_USE 8880
+#define HTTP_PORT 80
+#define HTTP_PORT_TO_USE 80
 
 #include "platform.h"
 
 #include <ESPAsync_WiFiManager.h>  
 
-// ESP32
-#include <WiFiMulti.h>
-WiFiMulti wifiMulti;
+#ifdef ESP32
+  #include <WiFiMulti.h>
+  WiFiMulti wifiMulti;
+#else
+  #include <ESP8266WiFiMulti.h>
+  ESP8266WiFiMulti wifiMulti;
+#endif
+
 
 #define SSID_MAX_LEN            32
 //From v1.0.10, WPA2 passwords can be up to 63 characters long.
@@ -55,6 +60,8 @@ bool initialConfig = false;
 
 bool loadConfigData()
 {
+    Serial.println("[HNWifi] loadConfigData Wifi");
+
     Preferences preferences;
     preferences.begin("wifi", false);
  
@@ -202,7 +209,7 @@ void wifi_setup()
 #if ( USING_ESP32_S2 || USING_ESP32_C3 )
   ESPAsync_WiFiManager ESPAsync_wifiManager(&webServer, NULL, "AsyncConfigOnSwitch");
 #else
-  DNSServer dnsServer;
+  AsyncDNSServer dnsServer;
   
   ESPAsync_WiFiManager ESPAsync_wifiManager(&webServer, &dnsServer, "AsyncConfigOnSwitch");
 #endif
