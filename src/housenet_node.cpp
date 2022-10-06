@@ -450,7 +450,7 @@ String HousenetNode::GetStatus()
     // debug(ip_addr);
 
     doc["ip"] = ip_addr;
-    doc["version"] = "1.2.0";
+    doc["version"] = VERSION_NUMBER;
     doc["build"] = compile_date;
     doc["sha1"] = git_sha1;
     doc["free"] = heap;

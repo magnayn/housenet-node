@@ -30,7 +30,7 @@ PulseCounter::PulseCounter(String id, uint8_t pin, uint32_t debounce_time ) : id
  *
  *
  */
-
+    pinMode(pin, INPUT); 
     pinMode(pin, INPUT_PULLUP);    
 
     enable();
