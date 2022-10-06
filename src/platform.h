@@ -18,4 +18,9 @@
 #endif
 
 
+#ifndef VERSION_NUMBER
+#define VERSION_NUMBER 1.3.0
+#endif
+
+
 #endif

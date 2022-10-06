@@ -2,6 +2,7 @@
 #include "platform.h"
 #include "housenet_node.h"
 #include "elements/housenet_opentherm.h"
+#include "elements/housenet_emontx.h"
 #include "debugging.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
@@ -355,7 +356,10 @@ server.on("/reset", HTTP_POST, [&](AsyncWebServerRequest *request)
             useMqtt = true;
         }
 
-        //   // create the elements
+        String name = obj["name"];
+        station_name = name;
+
+        // create the elements
         CreateElements(array);
     }
 
@@ -453,6 +457,11 @@ String HousenetNode::GetStatus()
 
     doc["processing"] = processing_enabled;
     doc["uptime_mins"] = (uint32_t)(timeUtils.getTime() / 60000);
+
+    doc["station_id"] = station_id;
+    doc["station_name"] = station_name;
+    
+    doc["useMqtt"] = useMqtt;    
 
     String data;
     serializeJson(doc, data);

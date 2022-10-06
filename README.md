@@ -106,3 +106,8 @@ An element can have multiple channels (e.g: onewire may have many things connect
 
   
  
+## Node types
+
+Constructed from the main config, each element instantiated via ```HousenetNode::CreateElements(JsonArray array)```
+
+Elements can receive messages in their namespace from MQTT: HousenetNode::CreateElements(JsonArray array)

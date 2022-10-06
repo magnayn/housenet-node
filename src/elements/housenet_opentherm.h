@@ -9,6 +9,10 @@
 class OTReading
 {
 public:
+    void WriteToJson(JsonObject& object) const;
+
+
+public:
   bool ch;
   bool dhw;
   bool flame;

@@ -6,6 +6,32 @@
 #include "time_utils.h"
 #include "housenet_opentherm.h"
 
+
+void OTReading::WriteToJson(JsonObject& doc) const
+{
+  doc["ch"] =  ch;
+  doc["dhw"] =  dhw;
+  doc["flame"] =  flame;
+
+  // Comes from us
+  doc["setPoint"] = setPoint;
+
+  doc["temperature"] =  temperature;
+
+  // Obs:
+  doc["relModLevel"] =   relModLevel;
+  
+  doc["pressure"] =  pressure;
+  doc["dhwTemp"] =  dhwTemp;
+  doc["tempReturn"] =  tempReturn;
+  
+  doc["burnerStarts"] =  burnerStarts;
+  doc["dhwBurnerStarts"] =  dhwBurnerStarts;
+  doc["burnerOperationHours"] =  burnerOperationHours;
+  
+  doc["setPointMax"] =  setPointMax;
+}
+
 //==============================================================================================================
 // OpenTherm
 //==============================================================================================================
@@ -28,7 +54,12 @@ String HousenetOpenthermElement::GetState(String channel)
   DynamicJsonDocument doc(256);
 
   doc["setpoint"] = setpoint;
+    
+  auto status = doc.createNestedObject("reading");
 
+  OTReading reading = GetReading();
+  reading.WriteToJson(status);
+  
   String data;
   serializeJson(doc, data);
   return data;
@@ -162,7 +193,7 @@ void HousenetOpenthermElement::process()
 
     thisReading.relModLevel = publish_f88(OpenThermMessageID::RelModLevel, "modulation_rate");
 
-    publish_f88(OpenThermMessageID::CHPressure, "ch/pressure");
+    thisReading.pressure = publish_f88(OpenThermMessageID::CHPressure, "ch/pressure");
     // publish_f88(OpenThermMessageID::DHWFlowRate,  "dhw/flow_rate");
     publish_f88(OpenThermMessageID::Tdhw, "dhw/temperature");
     // publish_f88(OpenThermMessageID::Toutside,     "outside_temperature");

@@ -1,16 +1,19 @@
 #include <Arduino.h>
-#include "housenet_node.h"
+#include "housenet_emontx.h"
 #include "debugging.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
 #include "time_utils.h"
 
+const String HousenetEmonTXElement::TYPE = "emontx";
 
 //==============================================================================================================
 // EMonTX
 //==============================================================================================================
-HousenetEmonTXElement::HousenetEmonTXElement(HousenetNode *parent, String id) : HousenetElement(parent, id) {
-    emontx.onMessage([&](const EmonMessage &msg) {
+HousenetEmonTXElement::HousenetEmonTXElement(HousenetNode *parent, String id) : HousenetElement(parent, id)
+{
+    emontx.onMessage([&](const EmonMessage &msg)
+                     {
         Serial.println("onMessage 1");
         processEmon(msg);
         Serial.println("onMessage 2");
@@ -18,12 +21,20 @@ HousenetEmonTXElement::HousenetEmonTXElement(HousenetNode *parent, String id) : 
         {
             publish_emon(msg, node->data_websocket);
         }
-        Serial.println("onMessage 3");
-    });
+        Serial.println("onMessage 3"); });
+}
+
+String HousenetEmonTXElement::GetState(String channel)
+{
+    auto json = last_emon_message.ToJson();
+    String data;
+    serializeJson(json, data);
+    return data;
 }
 
 void HousenetEmonTXElement::publish_emon(const EmonMessage &msg, AsyncWebSocketClient *client)
 {
+    // Don't do this, make publish() also do this.
     DynamicJsonDocument doc = msg.ToJson();
     String str;
     serializeJson(doc, str);
@@ -31,7 +42,8 @@ void HousenetEmonTXElement::publish_emon(const EmonMessage &msg, AsyncWebSocketC
     client->text(str.c_str());
 }
 
-void HousenetEmonTXElement::process() {
+void HousenetEmonTXElement::process()
+{
     emontx.process();
 }
 
@@ -47,7 +59,7 @@ void HousenetEmonTXElement::processEmon(const EmonMessage &msg)
     sprintf(value, "%d", msg.msg_seq);
     publish("msg", value);
 
-    //node->client.publish("/housenet/" + node->station_id + "/emontx/msg", value);
+    // node->client.publish("/housenet/" + node->station_id + "/emontx/msg", value);
 
     // Voltage
     sprintf(value, "%3.3f", msg.v);
@@ -58,7 +70,7 @@ void HousenetEmonTXElement::processEmon(const EmonMessage &msg)
     {
         if (last_emon_message.msg_seq == 0 || last_emon_message.power[k] != msg.power[k])
         {
-            sprintf(topic, "%d/current",  k);
+            sprintf(topic, "%d/current", k);
             sprintf(value, "%d", msg.power[k]);
             publish(topic, value);
         }

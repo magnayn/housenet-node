@@ -60,6 +60,7 @@ protected:
 
 public: 
     String station_id;
+    String station_name;
 
 public:
     AsyncWebServer server;
@@ -144,24 +145,7 @@ class HousenetMeterElement : public HousenetElement {
         bool meter_updated        = false;
 };
 
-class HousenetEmonTXElement : public HousenetElement {
-    public:
-        static const String TYPE;
 
-    public:
-        HousenetEmonTXElement(HousenetNode *parent, String id);
-        virtual void process();
-        virtual String getType() {
-            return TYPE;
-        }
-    protected:
-        void processEmon(const EmonMessage &msg);
-        void publish_emon(const EmonMessage &msg, AsyncWebSocketClient *client);
-    
-    private:
-        EmonTX emontx;
-        EmonMessage last_emon_message;
-};
 
 class HousenetStateElement : public HousenetElement {
     public:

@@ -27,7 +27,11 @@ export default function StatusPage() {
             <TableCell>Value</TableCell>            
           </TableRow>
         </TableHead>
-        <TableBody>         
+        <TableBody>   
+        <TableRow >
+              <TableCell>Station</TableCell>
+              <TableCell>{statusInfo?.station_id} ({statusInfo?.station_name})</TableCell>
+            </TableRow>        
             <TableRow >
               <TableCell>IP</TableCell>
               <TableCell>{statusInfo?.ip}</TableCell>
@@ -51,7 +55,11 @@ export default function StatusPage() {
             <TableRow >
               <TableCell>Uptime (mins)</TableCell>
               <TableCell>{statusInfo?.uptime_mins}</TableCell>
-            </TableRow>             
+            </TableRow>     
+            <TableRow >
+              <TableCell>MQTT</TableCell>
+              <TableCell>{statusInfo?.useMqtt ? "Yes" : "No"}</TableCell>
+            </TableRow>            
         </TableBody>
       </Table>
 

@@ -17,39 +17,61 @@ export default function EMonTXPage(props:PageProps) {
   
     function refresh()  {
 
-      // fetch(`${Configuration.baseUrl}/housenet/elements/state/${props.id}`)           
-      // .then(res => res.json())
-      // .then(data => {
-      //   setConfiguration(data);
+      fetch(`${Configuration.baseUrl}/housenet/elements/emontx/${props.id}`)           
+      .then(res => res.json())
+      .then(data => {
+        setConfiguration(data);
      
-      // });
+      });
     }
 
-    // useEffect( () => {
-    //   refresh();
-    //   const timer = setInterval(() => refresh(), 750);
-    //   return () => clearTimeout(timer);
-    // }, []);
+    useEffect( () => {
+      refresh();     
+    }, []);
 
     return (
      <div>
        <h1>EMonTX</h1>
        <h2>{props.id}</h2>
        <p>Connection to EmonTX device to republish over MQTT</p>
+       
+       
+
        <Table size="small">
         <TableHead>
-          
+        <TableRow >
+            <TableCell>Power</TableCell>
+            <TableCell>In</TableCell>
+            <TableCell>Out</TableCell>
+          </TableRow> 
         </TableHead>
-        <TableBody>         
-            <TableRow >
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-            </TableRow>          
+        <TableBody>    
+
+        {configuration?.channels?.map( (e:any) => {
+          return ( <TableRow >
+            <TableCell>{e.power}</TableCell>
+            <TableCell>{e.in}</TableCell>
+            <TableCell>{e.out}</TableCell>
+          </TableRow>         )}
+          )
+        }
+
+            
          
         </TableBody>
       </Table>
+
+      <Table size="small">
        
-      </div>
-        
+        <TableBody>    
+        <TableRow >
+      Sequence: {configuration?.seq}
+      </TableRow>
+      <TableRow>
+      Voltage: {configuration?.v}
+      </TableRow>
+      </TableBody>
+      </Table>
+        </div>
     );
 }

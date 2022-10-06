@@ -5,7 +5,7 @@
 const String HousenetStateElement::TYPE     = "state";
 
 const String HousenetMeterElement::TYPE      = "meter";
-const String HousenetEmonTXElement::TYPE     = "emontx";
+
 const String HousenetOneWireElement::TYPE    = "onewire";
 
 
