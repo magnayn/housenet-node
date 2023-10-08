@@ -8,14 +8,17 @@ extern "C"
 #include "debugging.h"
 #include "time_utils.h"
 
-ICACHE_RAM_ATTR void interrupt(void *arg)
+IRAM_ATTR void interruptFn(void *arg)
 {
     PulseCounter *item = (PulseCounter *)arg;
-    item->increment_counter_change();
+    item->interrupt();
 }
 
-PulseCounter::PulseCounter(String id, uint8_t pin, uint32_t debounce_time ) : id(id), pin(pin), time_gap(debounce_time)
+PulseCounter::PulseCounter(String id, uint8_t pin, uint32_t debounce_time ) : id(id), pin(pin), deBouncer(debounce_time), bummer(0)
 {
+
+    // GPIO23 pullup doesn't work?
+    
     /* Electric: 100A = 24kW.
  *
  * 1Wh = 1 flash
@@ -36,13 +39,42 @@ PulseCounter::PulseCounter(String id, uint8_t pin, uint32_t debounce_time ) : id
     enable();
 }
 
+IRAM_ATTR void PulseCounter::interrupt() 
+{
+    int pin_value = digitalRead(pin);
+
+    events++;
+    if( pin_value ) {
+        hi ++;
+    } else {
+        lo ++;
+    }
+
+    if( deBouncer.debounceFilterPasses() ) {
+        
+        if( state == 1 && pin_value == 0 ) {
+            signal_falling_edge();
+        } else if( state == 0 && pin_value ) {
+            signal_rising_edge();
+        } else {
+            // I worry that the interrupt is triggered but the signal goes back before we 'see' it
+            bummer++;
+
+            // If so, ignore it and keep looking as it should change again.
+            deBouncer.reset();
+        }
+
+        state = pin_value;
+    }
+}
+
 void PulseCounter::enable() {
     // OLD, pulse: attachInterruptArg(digitalPinToInterrupt(pin), interrupt, this, FALLING);
     // NEW: gas
 
     // You have to look for change otherwise it's impossible to tell whether the bouncing
     // signal is rising edge or falling edge.
-    attachInterruptArg(digitalPinToInterrupt(pin), interrupt, this, CHANGE);
+    attachInterruptArg(digitalPinToInterrupt(pin), interruptFn, this, CHANGE);
     state = digitalRead(pin);
 }
 
@@ -55,58 +87,19 @@ void PulseCounter::onChange(PulseHandlerFunction onRequest)
     _function = onRequest;
 }
 
-ICACHE_RAM_ATTR void PulseCounter::increment_counter_change()
+IRAM_ATTR void PulseCounter::signal_falling_edge()
 {
-    // char str[40];
+   
+    fall++;
 
-    int pin_value = digitalRead(pin);
-    // ignore
-    if( state == pin_value )
-        return;
-
-    state = pin_value;
-
-    uint64_t time = timeUtils.getTime();
-
-    if (time > (last_time + time_gap))
+    if (_function != NULL ) // Pull LO
     {
-        last_time = time;
-
-        if( state == 0 ) {
-            value++;
-        }
-
-        if (_function != NULL && state == 0 ) // Pull LO
-        {
-            _function(this);
-        }
+        _function(this);
     }
+
 }
 
-void PulseCounter::increment_counter_falling()
+void PulseCounter::signal_rising_edge()
 {
-    // char str[40];
-
-    // int pin_value = digitalRead(pin);
-
-    uint64_t time = timeUtils.getTime();
-
-    if (time > (last_time + time_gap))
-    {
-        value++;
-        last_time = time;
-
-        // sprintf(str, "%lld [%s:%d] : %d", time, id.c_str(), pin_value, value);
-        // Debugging.println(str);
-
-        if (_function != NULL)
-        {
-            _function(this);
-        }
-    }
-    else
-    {
-        // sprintf(str, "%lld [%s:%d] : --", time, id.c_str(), pin_value);
-        // Debugging.println(str);
-    }
+    rise++;
 }

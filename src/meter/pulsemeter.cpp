@@ -1,11 +1,15 @@
 #include <Arduino.h>
 #include "pulsemeter.h"
+#include <functional>
 
-ICACHE_RAM_ATTR PulseMeter::PulseMeter(String id, uint8_t pin, uint32_t debounce_time) : counter(id, pin, debounce_time), meter(id) {
-    counter.onChange([&](const PulseCounter *pc) { onPulse(pc); });
+IRAM_ATTR PulseMeter::PulseMeter(String id, uint8_t pin, uint32_t debounce_time) : counter(id, pin, debounce_time), meter(id) {
+//    counter.onChange([&](const PulseCounter *pc) { onPulse(pc); });
+    auto g = std::bind(&PulseMeter::onPulse, this, std::placeholders::_1);
+    
+    counter.onChange(g);
 }
 
-ICACHE_RAM_ATTR void PulseMeter::onPulse(const PulseCounter* pc) {
+IRAM_ATTR void PulseMeter::onPulse(const PulseCounter* pc) {
     
     meter.increment();
 

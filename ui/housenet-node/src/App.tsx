@@ -38,6 +38,7 @@ import Configuration from './Config';
 import EMonTXPage from './pages/EmonTXPage';
 import OnewirePage from './pages/OnewirePage';
 import OpenthermPage from './pages/OpenthermPage';
+import GPIOTriggerPage from './pages/GPIOTriggerPage';
 
 const drawerWidth: number = 240;
 
@@ -262,7 +263,7 @@ function DashboardContent() {
             {page == "emontx" && <EMonTXPage id={item.id} config={item} />}
             {page == "onewire" && <OnewirePage id={item.id} config={item} />}
             {page == "opentherm" && <OpenthermPage id={item.id} config={item} />}
-
+            {page == "gpiotrigger" && <GPIOTriggerPage id={item.id} config={item} />}
           </Container>
         </Box>
       </Box>

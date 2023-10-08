@@ -138,6 +138,8 @@ class HousenetMeterElement : public HousenetElement {
         virtual String GetState( String channel );
         virtual void   SetState( String channel, String data );
     protected:
+        void onChanged(const PulseMeter* pm);
+
         void pulse(const PulseMeter *pc);
 
     private:
@@ -192,14 +194,17 @@ class HousenetGpioTriggerElement : public HousenetElement {
         static const String TYPE;
      
      public:
-        HousenetGpioTriggerElement(HousenetNode *parent, String id, uint8_t pin);
+        HousenetGpioTriggerElement(HousenetNode *parent, String id, uint8_t pin, unsigned long delayMs);
         virtual void OnMessage(String& topic, String& value);
         virtual String getType() {
             return TYPE;
         }
+        virtual void   SetState( String channel, String data );
+        void trigger();
 
     private:
-        uint8_t  m_pin;
+        uint8_t       m_pin;
+        unsigned long m_delay;
 };
 
 

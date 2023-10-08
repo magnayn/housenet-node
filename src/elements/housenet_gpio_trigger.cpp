@@ -10,9 +10,10 @@
 //==============================================================================================================
 const String HousenetGpioTriggerElement::TYPE = "gpiotrigger";
 
-ICACHE_RAM_ATTR HousenetGpioTriggerElement::HousenetGpioTriggerElement(HousenetNode *parent, String id, uint8_t pin) : HousenetElement(parent, id) {   
+ICACHE_RAM_ATTR HousenetGpioTriggerElement::HousenetGpioTriggerElement(HousenetNode *parent, String id, uint8_t pin, unsigned long delayMs) : HousenetElement(parent, id) {   
     
     m_pin = pin;    
+    m_delay = delayMs;
     digitalWrite(m_pin, 1);
     pinMode(m_pin, OUTPUT_OPEN_DRAIN);    
     
@@ -20,9 +21,14 @@ ICACHE_RAM_ATTR HousenetGpioTriggerElement::HousenetGpioTriggerElement(HousenetN
 
 void HousenetGpioTriggerElement::OnMessage(String& topic, String& value)
 {
+    trigger();
+}
+
+void HousenetGpioTriggerElement::trigger()
+{
     Serial.println("trigger");
     digitalWrite(m_pin, 0);
-    delay(300);
+    delay(m_delay);
     digitalWrite(m_pin, 1);
     
 }
@@ -40,55 +46,6 @@ void HousenetGpioTriggerElement::OnMessage(String& topic, String& value)
 //     return data;
 // }
 
-// void HousenetMeterElement::SetState( String channel, String value ) {
-  
-//         const char* txtValue = value.c_str();
-//         bool force = false;        
-//         int v = 0;
-
-//         if( txtValue[0] == '=' ) {
-//             force = true;
-//             txtValue = txtValue + 1;
-//         } 
-
-//         v = atoi(txtValue);
-
-        
-//         // If we _force_ a value ( =1000 ) it will set the value regardless.
-//         // If we intialize, it will ignore if it already has bee initalised.
-
-//         if( force )
-//             pulse_meter->meter.setValue(v);
-//         else {
-//             // treat as an increment, or a decrement to the value.
-//             pulse_meter->meter.setValue( pulse_meter->meter.value + v);
-//         }
-// }
-
-// void HousenetMeterElement::process() {
-//     if( meter_updated ) {
-//         pulse( pulse_meter );
-//         meter_updated = false;
-//     }
-// }
-
-
-      
-
-// void HousenetMeterElement::pulse(const PulseMeter *pulseMeter)
-// {
-    
-//     char value[64];
-
-//     sprintf(value, "%d", pulseMeter->counter.value);
-
-//     publish("pulse", value);
-
-//     if( pulseMeter->meter.initialized ) {
-//         // Only send out if it's been init-ed. Publish as a "retained" value.
-
-        
-//         sprintf(value, "%d", pulseMeter->meter.value);
-//         publish("reading", value, true, 0);
-//     }
-// }
+void HousenetGpioTriggerElement::SetState( String channel, String value ) {
+  trigger();
+}

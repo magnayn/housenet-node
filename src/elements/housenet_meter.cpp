@@ -9,7 +9,7 @@
 // Pulse Meter
 //==============================================================================================================
 
-ICACHE_RAM_ATTR HousenetMeterElement::HousenetMeterElement(HousenetNode *parent, String id, uint8_t pin, uint32_t debounceTime) : HousenetElement(parent, id) {   
+IRAM_ATTR HousenetMeterElement::HousenetMeterElement(HousenetNode *parent, String id, uint8_t pin, uint32_t debounceTime) : HousenetElement(parent, id) {   
     
     // Subscribe to set initial values..
     String stopic = "/housenet/" + node->station_id + "/" + getType() + "/" + id + "/reading";
@@ -21,20 +21,39 @@ ICACHE_RAM_ATTR HousenetMeterElement::HousenetMeterElement(HousenetNode *parent,
     // TODO: create pulse_meter
     pulse_meter = new PulseMeter(id, pin, debounceTime);
 
-     pulse_meter->onChange(  [&](const PulseMeter *item)->void{
+    /* pulse_meter->onChange(  [&](const PulseMeter *item)->void{
         meter_updated = true;
      });
+    */
+
+   auto g = std::bind(&HousenetMeterElement::onChanged, this, std::placeholders::_1);
+   pulse_meter->onChange(g);
+
 
     pulse( pulse_meter );
     
 }
 
+IRAM_ATTR void HousenetMeterElement::onChanged(const PulseMeter* pm)
+{
+    meter_updated = true;
+}
+
 String HousenetMeterElement::GetState( String channel ) {
     DynamicJsonDocument doc(256);
 
-    doc["pulses"] = pulse_meter->counter.value;
+    doc["pulses"] = pulse_meter->counter.fall;
     doc["meter_initialized"]  = pulse_meter->meter.initialized;
     doc["meter"]  = pulse_meter->meter.value;
+    
+    doc["events"] = pulse_meter->counter.events;
+    doc["rise"] = pulse_meter->counter.rise;
+    doc["transient"]  = pulse_meter->counter.bummer;
+    doc["state"] = pulse_meter->counter.state;
+
+    doc["lo"] = pulse_meter->counter.lo;
+    doc["hi"] = pulse_meter->counter.hi;
+
     
     String data;
     serializeJson(doc, data);
@@ -99,10 +118,11 @@ void HousenetMeterElement::OnMessage(String& topic, String& value)
 
 void HousenetMeterElement::pulse(const PulseMeter *pulseMeter)
 {
+    Serial.println("Pulse");
     
     char value[64];
 
-    sprintf(value, "%d", pulseMeter->counter.value);
+    sprintf(value, "%d", pulseMeter->counter.fall);
 
     publish("pulse", value);
 

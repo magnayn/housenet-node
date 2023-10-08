@@ -411,7 +411,11 @@ void HousenetNode::CreateElements(JsonArray array)
         }  
         else if (type.equalsIgnoreCase(HousenetGpioTriggerElement::TYPE))
         {
-            element = new HousenetGpioTriggerElement(this, id, obj.getMember("pin").as<int>());
+            unsigned long delay = 300;
+            if( obj.containsKey("delay") ) 
+                delay = obj.getMember("delay").as<int>();
+
+            element = new HousenetGpioTriggerElement(this, id, obj.getMember("pin").as<int>(), delay);
         }
 
         if (element != nullptr)
@@ -427,7 +431,7 @@ void HousenetNode::CreateElements(JsonArray array)
 
 HousenetElement *HousenetNode::FindElement(String &type, String &id)
 {
-    Serial.println("Find Element " + type + " id " + id);
+    //Serial.println("Find Element " + type + " id " + id);
 
     for (auto const &element : elements)
     {
@@ -435,7 +439,7 @@ HousenetElement *HousenetNode::FindElement(String &type, String &id)
             return element;
     }
 
-     Serial.println("Fail");
+    // Serial.println("Fail");
     return nullptr;
 }
 
@@ -485,11 +489,8 @@ void HousenetNode::setupMqtt(String host)
 
     station_id = WiFi.macAddress();
     station_id.replace(':', '-');
-    // client.ref = this;
-    client.subscribe("/hello");
-
-    // client.onMessage(messageReceived);
-
+    
+  
     client.onMessage([&](String &theTopic, String &value) -> void
                      {
                          Serial.println("Incoming " + theTopic);
@@ -524,7 +525,10 @@ void HousenetNode::setupMqtt(String host)
                          if (id == nullptr)
                              return;
 
-                         char *rest = strtok(NULL, "");
+                         const char *rest = strtok(NULL, "");
+                         if( rest == nullptr )
+                            return;
+
                          String theType(type);
                          String theId(id);
                          String theRest(rest);
@@ -535,6 +539,7 @@ void HousenetNode::setupMqtt(String host)
                              return;
 
                          item->OnMessage(theRest, value);
+                         
                      });
 
     client.begin(host.c_str(), net);
@@ -545,6 +550,8 @@ void HousenetNode::connectMqtt()
 {
     if( !useMqtt )
         return;
+
+    Serial.println(station_id);
 
     if (client.connect(station_id.c_str()))
     {
@@ -570,19 +577,34 @@ void HousenetNode::connectMqtt()
 
 void HousenetNode::process()
 {
+    static int i=0;
+    static uint64_t t0 = 0;
+    uint64_t when = timeUtils.getTime();
+
+    i++;
+    if( i == 10000 ) {
+        Serial.printf("time for 10000 iterations %ju\n", when - t0);
+        i = 0;
+        t0 = when;
+    }
+
+
     if (processing_enabled)
     {
         client.loop();
 
-        if (useMqtt && !client.connected())
+        if (useMqtt && !client.connected()) {
+            Serial.println("MQTT not connected");
             connectMqtt();
+        }
         else
         {
             static uint64_t lastUpdate = 0;
-            uint64_t when = timeUtils.getTime();
+            
 
             if (when > lastUpdate + 30000) // every 30 mins
             {
+                Serial.println("Publish Status");
                 publishStatus();
 
                 lastUpdate = when;

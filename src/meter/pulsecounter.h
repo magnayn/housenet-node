@@ -1,6 +1,8 @@
 #ifndef __PULSECOUNTER_H__
 #define __PULSECOUNTER_H__
 #include "time_utils.h"
+#include "debouncer.h"
+
 #include <functional>
 
 class PulseCounter;
@@ -13,34 +15,36 @@ public:
     PulseCounter(String id, uint8_t pin, uint32_t debounce_time);
     void onChange(PulseHandlerFunction onRequest);
 
-    void increment_counter_falling();
-    void increment_counter_change();
+    void signal_falling_edge();
+    void signal_rising_edge();
 
     void enable();
     void disable();
+
+    void interrupt();
+private:
+   
 
 public:
     String id;
     uint8_t pin;
 
-    // ms min between pulses
-    uint64_t time_gap;
+    DeBouncer deBouncer;
+    
+     volatile uint32_t events = 0;
 
     // Current Value (number of pulses)
-    uint32_t value = 0;
+    volatile uint32_t rise = 0;
+    volatile uint32_t fall = 0;
 
-    // For Debounce
-    uint64_t last_time = 0;
-
-
-    int state;
-
-    // For MQTT
-    //uint32 last_broadcast = 0;
+    // pin state last time around
+    volatile int state;
 
     PulseHandlerFunction _function;
 
-    TimeUtils timeUtils;
+    volatile int bummer;
+    volatile int lo = 0;
+    volatile int hi = 0;
 };
 
 #endif

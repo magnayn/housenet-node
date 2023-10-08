@@ -1,3 +1,9 @@
+
+@font-face {
+    font-family: 'Seven Segment';
+    src: url('../../public/7 Segment.ttf') format('truetype'); 
+}  
+
 iframe {
     display: flex;
      width: 100%;
@@ -29,9 +35,9 @@ iframe {
 
 .electricMeter {
     padding: 10px;
-    background-color: grey;
+    background-color: lightgrey;
     color:  black;
-    font-family: Digital-7;
-    font-weight: bold;
-    font-size: 14pt;
+    font-family: "Seven Segment";
+    font-weight: normal;
+    font-size: 24pt;
 }

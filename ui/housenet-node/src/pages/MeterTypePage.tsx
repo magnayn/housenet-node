@@ -40,12 +40,14 @@ function ElectricMeter(props:MeterProp) {
     sigFigs.push(<div>{digit(props.value, x)}</div>);
     x = x - 1;
   }
-    
+  
+  let majFigs = [];
+  for( let i=0; i<5; i++ ) {
+    majFigs.unshift(<div>{digit(props.value, 4+i)}</div>)
+  }
+
   return <Stack className="electricMeter" spacing={2} direction="row">
-    <div>{digit(props.value, 7)}</div>
-    <div>{digit(props.value, 6)}</div>
-    <div>{digit(props.value, 5)}</div>
-    <div>{digit(props.value, 4)}</div>   
+    {majFigs}    
     { props.significantFigures > 0 && sigFigs }  
     
 </Stack>
@@ -62,6 +64,7 @@ export default function MeterTypePage(props: PageProps) {
   const [currentValue, setCurrentValue] = useState<number>(0);
 
   const [fetched, setFetched] = useState<boolean>(false);
+
 
   function refresh() {
     console.log(`Refresh ${props.id}`);
@@ -82,6 +85,12 @@ export default function MeterTypePage(props: PageProps) {
       });
   }
 
+  useEffect(() => {
+    console.log("CDU");
+    setFetched(false);
+    refresh();
+  },[props.id]);
+  
   useIntervalWhen(
     () => {
       refresh();
