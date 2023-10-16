@@ -1,9 +1,12 @@
-#include <Arduino.h>
+
 #include "meter.h"
 
-Meter::Meter(String id) : id(id) {
 
-}
+/*
+ * A meter is really just a counter with an initialize and a set, so that if the 'stored'
+ value for the meter takes a while to arrive then it can 
+ */
+
 
 void Meter::initialize(uint32_t setting) {
 

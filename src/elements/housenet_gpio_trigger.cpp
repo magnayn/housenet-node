@@ -1,4 +1,4 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 #include "housenet_node.h"
 #include "debugging.h"
 #include <ArduinoJson.h>

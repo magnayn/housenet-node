@@ -1,59 +1,68 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 #include "housenet_node.h"
 #include "debugging.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
 #include "time_utils.h"
+#include "housenet_meter.h"
 
 //==============================================================================================================
 // Pulse Meter
 //==============================================================================================================
 
-IRAM_ATTR HousenetMeterElement::HousenetMeterElement(HousenetNode *parent, String id, uint8_t pin, uint32_t debounceTime) : HousenetElement(parent, id) {   
+const String HousenetMeterElement::TYPE      = "meter";
+
+
+IRAM_ATTR HousenetMeterElement::HousenetMeterElement(HousenetNode *parent, String id, uint8_t pin, uint32_t debounceTime, int mode, bool pullup) : HousenetElement(parent, id) {   
     
     // Subscribe to set initial values..
-    String stopic = "/housenet/" + node->station_id + "/" + getType() + "/" + id + "/reading";
+    String stopic = "/housenet/" + node->station_id + "/" + GetType() + "/" + id + "/reading";
 
     Serial.println("Subscribe to " + stopic);
 
     node->client.subscribe(stopic);
     
     // TODO: create pulse_meter
-    pulse_meter = new PulseMeter(id, pin, debounceTime);
+    m_pulse_counter = new PulseCounter(pin, debounceTime, mode, pullup);
 
     /* pulse_meter->onChange(  [&](const PulseMeter *item)->void{
         meter_updated = true;
      });
     */
 
-   auto g = std::bind(&HousenetMeterElement::onChanged, this, std::placeholders::_1);
-   pulse_meter->onChange(g);
+   auto g = std::bind(&HousenetMeterElement::OnPulseCounterEvent, this, std::placeholders::_1);
+   m_pulse_counter->OnChangeCall(g);
 
-
-    pulse( pulse_meter );
+   // pulse( pulse_meter );
     
 }
 
-IRAM_ATTR void HousenetMeterElement::onChanged(const PulseMeter* pm)
+void HousenetMeterElement::OnPulseCounterEvent(const BaseSensor* pm)
 {
-    meter_updated = true;
+    Serial.println("Pulse");
+    
+    m_pulse_counter++;
+    m_meter.increment();
+
+    char value[64];
+
+    sprintf(value, "%d", m_pulse_counter->GetCount());
+
+    publish("pulse", value);
+
+    if( m_meter.IsInitialized() ) {
+        // Only send out if it's been init-ed. Publish as a "retained" value.
+        sprintf(value, "%d", m_meter.GetValue());
+        publish("reading", value, true, 0);
+    }
 }
 
 String HousenetMeterElement::GetState( String channel ) {
     DynamicJsonDocument doc(256);
 
-    doc["pulses"] = pulse_meter->counter.fall;
-    doc["meter_initialized"]  = pulse_meter->meter.initialized;
-    doc["meter"]  = pulse_meter->meter.value;
-    
-    doc["events"] = pulse_meter->counter.events;
-    doc["rise"] = pulse_meter->counter.rise;
-    doc["transient"]  = pulse_meter->counter.bummer;
-    doc["state"] = pulse_meter->counter.state;
-
-    doc["lo"] = pulse_meter->counter.lo;
-    doc["hi"] = pulse_meter->counter.hi;
-
+    doc["pulses"]             = m_pulse_counter->GetCount();
+    doc["meter_initialized"]  = m_meter.IsInitialized();
+    doc["meter"]              = m_meter.GetValue();
     
     String data;
     serializeJson(doc, data);
@@ -78,22 +87,21 @@ void HousenetMeterElement::SetState( String channel, String value ) {
         // If we intialize, it will ignore if it already has bee initalised.
 
         if( force )
-            pulse_meter->meter.setValue(v);
+            m_meter.setValue(v);
         else {
             // treat as an increment, or a decrement to the value.
-            pulse_meter->meter.setValue( pulse_meter->meter.value + v);
+            m_meter.initialize(v);
         }
 }
 
-void HousenetMeterElement::process() {
-    if( meter_updated ) {
-        pulse( pulse_meter );
-        meter_updated = false;
-    }
+void HousenetMeterElement::Process() {
+    m_pulse_counter->Process();
 }
 
 void HousenetMeterElement::OnMessage(String& topic, String& value)
 {
+    Serial.println("RCV " + topic + " = " + value);
+
         const char* txtValue = value.c_str();
         bool force = false;        
         int v = 0;
@@ -110,27 +118,7 @@ void HousenetMeterElement::OnMessage(String& topic, String& value)
         // If we intialize, it will ignore if it already has bee initalised.
 
         if( force )
-            pulse_meter->meter.setValue(v);
+            m_meter.setValue(v);
         else
-            pulse_meter->meter.initialize(v);                
-}
-      
-
-void HousenetMeterElement::pulse(const PulseMeter *pulseMeter)
-{
-    Serial.println("Pulse");
-    
-    char value[64];
-
-    sprintf(value, "%d", pulseMeter->counter.fall);
-
-    publish("pulse", value);
-
-    if( pulseMeter->meter.initialized ) {
-        // Only send out if it's been init-ed. Publish as a "retained" value.
-
-        
-        sprintf(value, "%d", pulseMeter->meter.value);
-        publish("reading", value, true, 0);
-    }
+            m_meter.initialize(v);                
 }

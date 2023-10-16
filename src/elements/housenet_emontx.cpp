@@ -1,4 +1,4 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 #include "housenet_emontx.h"
 #include "debugging.h"
 #include <ArduinoJson.h>
@@ -42,7 +42,7 @@ void HousenetEmonTXElement::publish_emon(const EmonMessage &msg, AsyncWebSocketC
     client->text(str.c_str());
 }
 
-void HousenetEmonTXElement::process()
+void HousenetEmonTXElement::Process()
 {
     emontx.process();
 }

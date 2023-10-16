@@ -1,5 +1,5 @@
 
-#include <Arduino.h>
+//#include <Arduino.h>
 #include "onewirebus.h"
 extern "C"
 {

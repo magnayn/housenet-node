@@ -1,4 +1,4 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 #include "housenet_node.h"
 #include "debugging.h"
 #include <ArduinoJson.h>
@@ -25,7 +25,7 @@ ICACHE_RAM_ATTR void HousenetStateElement::callback(const PinState* state)
  ready = true;
 }
     
-void HousenetStateElement::process() {
+void HousenetStateElement::Process() {
     if( ready ) {
          ready = false;
          Serial.println("Process");

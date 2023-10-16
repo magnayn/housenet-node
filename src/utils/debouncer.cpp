@@ -2,7 +2,7 @@
 
 DeBouncer::DeBouncer(uint32_t t ) : debounce_time(t)
 {
-
+    reset();
 }
 
 IRAM_ATTR bool DeBouncer::debounceFilterPasses()
@@ -19,5 +19,5 @@ IRAM_ATTR bool DeBouncer::debounceFilterPasses()
 
 IRAM_ATTR void DeBouncer::reset()
 {
-    last_time = 0;
+    last_time = timeUtils.getTime();
 }

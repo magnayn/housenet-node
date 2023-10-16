@@ -2,7 +2,7 @@
 #define __ESP8266_PREFERENCES__
 #ifdef ESP8266
 
-#include <Arduino.h>
+//#include <Arduino.h>
 #include <ArduinoJson.h>
 
 class Preferences

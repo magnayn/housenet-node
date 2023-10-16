@@ -1,4 +1,4 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 
 #define _ESPASYNC_WIFIMGR_LOGLEVEL_    4
 #define HTTP_PORT 80

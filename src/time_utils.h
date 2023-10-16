@@ -1,7 +1,7 @@
 #ifndef __TIME_UTILS_H__
 #define __TIME_UTILS_H__
 
-#include <Arduino.h>
+#include <Arduino.h> // uint types
 
 
 

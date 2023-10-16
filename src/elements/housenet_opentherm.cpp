@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include "housenet_node.h"
 #include "debugging.h"
 #include <ArduinoJson.h>
@@ -130,13 +129,14 @@ void HousenetOpenthermElement::publishReading(OTReading &thisReading)
   publishf("ch/setpoint/max", thisReading.setPointMax);
 }
 
-void HousenetOpenthermElement::process()
+void HousenetOpenthermElement::Process()
 {
 
   new_ts = millis();
 
   if (new_ts - ts > 1000)
   {
+    publish("setpoint", "ok" );
     ot.setBoilerTemperature(setpoint);
     
     // Set/Get Boiler Status
@@ -148,9 +148,13 @@ void HousenetOpenthermElement::process()
 
     unsigned long response = ot.setBoilerStatus(enableCentralHeating, enableHotWater, enableCooling);
     OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
+
+
+    
+
     if (responseStatus == OpenThermResponseStatus::SUCCESS)
     {
-
+      publish("ot_response", "success" );
       thisReading.ch = ot.isCentralHeatingActive(response);
       thisReading.dhw = ot.isHotWaterActive(response);
       thisReading.flame = ot.isFlameOn(response);
@@ -161,16 +165,19 @@ void HousenetOpenthermElement::process()
     }
     if (responseStatus == OpenThermResponseStatus::NONE)
     {
+      publish("ot_response", "none" );
       Serial.println("Error: OpenTherm is not initialized");
       return;
     }
     else if (responseStatus == OpenThermResponseStatus::INVALID)
     {
+      publish("ot_response", "invalid" );
       Serial.println("Error: Invalid response " + String(response, HEX));
       return;
     }
     else if (responseStatus == OpenThermResponseStatus::TIMEOUT)
     {
+      publish("ot_response", "timeout" );
       Serial.println("Error: Response timeout");
       return;
     }
@@ -300,18 +307,25 @@ unsigned long HousenetOpenthermElement::publish_f88(OpenThermMessageID id, const
   }
 }
 
-void HousenetOpenthermElement::publishf(String name, float value)
+void HousenetOpenthermElement::publish(String name, float value)
 {
   char data[30];
   snprintf(data, 30, "%.2f", value);
   publish(name, data);
 }
 
-void HousenetOpenthermElement::publishu16(String name, uint16_t value)
+void HousenetOpenthermElement::publish(String name, uint16_t value)
 {
   char data[30];
   snprintf(data, 30, "%u", value);
   publish(name, data);
+}
+
+void HousenetOpenthermElement::publish(String name, int16_t value) {
+  char data[30];
+  snprintf(data, 30, "%u", ot.getUInt(value));
+
+  publish(name, data);    
 }
 
 int16_t HousenetOpenthermElement::publish_s16(OpenThermMessageID id, const char *topic)

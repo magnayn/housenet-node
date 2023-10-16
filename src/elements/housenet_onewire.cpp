@@ -1,4 +1,4 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 #include "housenet_node.h"
 #include "debugging.h"
 #include <ArduinoJson.h>
@@ -14,7 +14,7 @@ HousenetOneWireElement::HousenetOneWireElement(HousenetNode *parent, String id, 
 ready = false;
 }
 
-void HousenetOneWireElement::process() {
+void HousenetOneWireElement::Process() {
     char value[64];
     char topic[64];
 

@@ -1,7 +1,7 @@
 #ifndef __HOUSENET_OPENTHERM_H__
 #define __HOUSENET_OPENTHERM_H__
 
-#include <Arduino.h>
+//#include <Arduino.h>
 #include "housenet_node.h"
 #include "opentherm/OpenTherm.h"
 
@@ -10,7 +10,6 @@ class OTReading
 {
 public:
     void WriteToJson(JsonObject& object) const;
-
 
 public:
   bool ch;
@@ -42,8 +41,8 @@ class HousenetOpenthermElement : public HousenetElement {
 
     public:
         HousenetOpenthermElement(HousenetNode *parent, String id, uint8_t pinIn, uint8_t pinOut);
-        virtual void process();
-        virtual String getType() {
+        virtual void Process();
+        virtual String GetType() {
             return TYPE;
         }
         virtual String GetState( String channel );
@@ -65,8 +64,10 @@ class HousenetOpenthermElement : public HousenetElement {
         unsigned long publish_u16(OpenThermMessageID id, const char* topic);
         void          publish_raw(OpenThermMessageID id, const char* topic);
         
-        void publishf(String name, float value);
-        void publishu16(String name, uint16_t value);
+        void publish(String name, float value);
+        void publish(String name, uint16_t value);
+        void publish(String name, int16_t value);
+
     private:
         OpenTherm ot;
 

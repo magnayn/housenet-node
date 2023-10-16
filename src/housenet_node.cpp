@@ -3,6 +3,7 @@
 #include "housenet_node.h"
 #include "elements/housenet_opentherm.h"
 #include "elements/housenet_emontx.h"
+#include "elements/housenet_meter.h"
 #include "debugging.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
@@ -227,7 +228,7 @@ server.on("/reset", HTTP_POST, [&](AsyncWebServerRequest *request)
 
                 JsonObject obj1 = array.createNestedObject();
 
-                String type = element->getType();
+                String type = element->GetType();
                 String id   = element->GetId();
             
                 obj1["type"] = type;
@@ -399,7 +400,22 @@ void HousenetNode::CreateElements(JsonArray array)
         }
         else if (type.equalsIgnoreCase(HousenetMeterElement::TYPE))
         {
-            element = new HousenetMeterElement(this, id, obj.getMember("pin").as<int>(), obj.getMember("debounce").as<int>());
+            String modeString = obj["mode"] | "CHANGE";
+            bool pullup = obj["pullup"] | true;
+
+            int mode = CHANGE;
+
+            if( modeString.equalsIgnoreCase("rising") ) {
+                mode = RISING;   
+                Serial.println("rising");             
+            } else if( modeString.equalsIgnoreCase("falling") ) {
+                mode = FALLING;          
+                Serial.println("falling");      
+            }
+
+            Serial.println(pullup?"pullup":"nopull");
+
+            element = new HousenetMeterElement(this, id, obj.getMember("pin").as<int>(), obj.getMember("debounce").as<int>(), mode, pullup);
         }
         else if (type.equalsIgnoreCase(HousenetEmonTXElement::TYPE))
         {
@@ -435,7 +451,7 @@ HousenetElement *HousenetNode::FindElement(String &type, String &id)
 
     for (auto const &element : elements)
     {
-        if (element->getType().equalsIgnoreCase(type) && element->GetId().equalsIgnoreCase(id))
+        if (element->GetType().equalsIgnoreCase(type) && element->GetId().equalsIgnoreCase(id))
             return element;
     }
 
@@ -575,19 +591,21 @@ void HousenetNode::connectMqtt()
     
 }
 
-void HousenetNode::process()
+void HousenetNode::Process()
 {
-    static int i=0;
-    static uint64_t t0 = 0;
-    uint64_t when = timeUtils.getTime();
+   /* static int i=0;
+    static uint64_t t0 = 0;*/
 
+
+    uint64_t when = timeUtils.getTime();
+/*
     i++;
     if( i == 10000 ) {
         Serial.printf("time for 10000 iterations %ju\n", when - t0);
         i = 0;
         t0 = when;
     }
-
+*/
 
     if (processing_enabled)
     {
@@ -614,7 +632,7 @@ void HousenetNode::process()
         for (auto const &element : elements)
         {
 
-            element->process();
+            element->Process();
         }
     }
 }

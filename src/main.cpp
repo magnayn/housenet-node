@@ -1,4 +1,4 @@
-#include <Arduino.h>
+//#include <Arduino.h>
 #include "platform.h"
 #include "housenet_node.h"
 #include <AsyncElegantOTA.h>
@@ -40,6 +40,6 @@ void loop()
 {
     wifi_check_status();
 
-    node->process();
+    node->Process();
 
 }

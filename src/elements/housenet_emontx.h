@@ -1,7 +1,7 @@
 #ifndef __HOUSENET_EMONTX_H__
 #define __HOUSENET_EMONTX_H__
 
-#include <Arduino.h>
+//#include <Arduino.h>
 #include "housenet_node.h"
 
 
@@ -11,8 +11,8 @@ class HousenetEmonTXElement : public HousenetElement {
 
     public:
         HousenetEmonTXElement(HousenetNode *parent, String id);
-        virtual void process();
-        virtual String getType() {
+        virtual void Process();
+        virtual String GetType() {
             return TYPE;
         }
         virtual String GetState( String channel );

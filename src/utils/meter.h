@@ -1,20 +1,25 @@
 #ifndef __METER_H__
 #define __METER_H__
 
+#include <Arduino.h>
 
 class Meter
 {
 public:
-    Meter(String id);
     
     void initialize(uint32_t value);
     void setValue(uint32_t value);
 
     void increment();
 
-public:    
-    String id;
+    uint32_t GetValue() { 
+        return value;
+    }
 
+    bool IsInitialized() {
+        return initialized;
+    }
+private:        
     bool initialized = false;
 
     // Current Value 

@@ -1,7 +1,7 @@
 #ifndef __HOUSENET_NODE_H__
 #define __HOUSENET_NODE_H__
 
-#include <Arduino.h>
+//#include <Arduino.h>
 
 #ifdef ESP32
 #include <WiFi.h>
@@ -14,8 +14,8 @@
 #include <MQTT.h>
 //#include <ESP8266HTTPClient.h>
 #include "emontx/emontx.h"
-#include "meter/pulsecounter.h"
-#include "meter/pulsemeter.h"
+#include "sensor/pin/pulsecounter.h"
+
 
 #include <ArduinoJson.h>
 #include "time_utils.h"
@@ -23,7 +23,7 @@
 #include <queue>
 
 #include "sensor/onewirebus.h"
-#include "sensor/pinstate.h"
+#include "sensor/pin/pinstate.h"
 #include <functional>
 
 #include <WiFiClient.h>
@@ -36,7 +36,7 @@ class HousenetNode
 public:
     HousenetNode();
 
-    void process();
+    void Process();
     void debug(String data);
 
 protected:
@@ -92,11 +92,11 @@ class HousenetElement {
         }
 
         // Process is called on each element as a part of the main loop.
-        virtual void process(){
+        virtual void Process(){
 
         }
         // Override to return a type name.
-        virtual String getType() = 0;
+        virtual String GetType() = 0;
 
         virtual void OnMessage(String& topic, String& value) {
 
@@ -119,36 +119,6 @@ class HousenetElement {
 };
 
 
-
-
-class HousenetMeterElement : public HousenetElement {
-    public:
-        static const String TYPE;
-
-    public:
-        HousenetMeterElement(HousenetNode *parent, String id, uint8_t pin, uint32_t debounce);
-        virtual void process();
-
-        virtual String getType() {
-            return TYPE;
-        }
-
-        virtual void OnMessage(String& topic, String& value);
-        
-        virtual String GetState( String channel );
-        virtual void   SetState( String channel, String data );
-    protected:
-        void onChanged(const PulseMeter* pm);
-
-        void pulse(const PulseMeter *pc);
-
-    private:
-        PulseMeter*   pulse_meter = nullptr;
-        bool meter_updated        = false;
-};
-
-
-
 class HousenetStateElement : public HousenetElement {
     public:
         static const String TYPE;
@@ -156,10 +126,10 @@ class HousenetStateElement : public HousenetElement {
     public:
         HousenetStateElement(HousenetNode *parent, String id, uint8_t pin);
   
-        virtual String getType() {
+        virtual String GetType() {
             return TYPE;
         }
-        virtual void process();
+        virtual void Process();
         
         virtual String GetState( String channel );
         void callback(const PinState* state);
@@ -176,8 +146,8 @@ class HousenetOneWireElement : public HousenetElement {
 
     public:
         HousenetOneWireElement(HousenetNode *parent, String id, uint8_t pin);
-        virtual void process();
-        virtual String getType() {
+        virtual void Process();
+        virtual String GetType() {
             return TYPE;
         }
     protected:
@@ -196,7 +166,7 @@ class HousenetGpioTriggerElement : public HousenetElement {
      public:
         HousenetGpioTriggerElement(HousenetNode *parent, String id, uint8_t pin, unsigned long delayMs);
         virtual void OnMessage(String& topic, String& value);
-        virtual String getType() {
+        virtual String GetType() {
             return TYPE;
         }
         virtual void   SetState( String channel, String data );
