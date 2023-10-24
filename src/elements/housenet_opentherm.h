@@ -59,15 +59,17 @@ class HousenetOpenthermElement : public HousenetElement {
         float         getF88(OpenThermMessageID id);
         unsigned long getRAW(OpenThermMessageID id);
 
-        unsigned long publish_f88(OpenThermMessageID id, const char* topic);
+        /*unsigned long publish_f88(OpenThermMessageID id, const char* topic);
         int16_t       publish_s16(OpenThermMessageID id, const char* topic); 
         unsigned long publish_u16(OpenThermMessageID id, const char* topic);
         void          publish_raw(OpenThermMessageID id, const char* topic);
+        */
         
-        void publish(String name, float value);
-        void publish(String name, uint16_t value);
-        void publish(String name, int16_t value);
-
+        void publishf(String name, float value);
+        void publishu16(String name, uint16_t value);
+        void publishs16(String name, int16_t value);
+        void publishraw(String name, unsigned long value);
+        
     private:
         OpenTherm ot;
 

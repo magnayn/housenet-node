@@ -5,30 +5,29 @@
 #include "time_utils.h"
 #include "housenet_opentherm.h"
 
-
-void OTReading::WriteToJson(JsonObject& doc) const
+void OTReading::WriteToJson(JsonObject &doc) const
 {
-  doc["ch"] =  ch;
-  doc["dhw"] =  dhw;
-  doc["flame"] =  flame;
+  doc["ch"] = ch;
+  doc["dhw"] = dhw;
+  doc["flame"] = flame;
 
   // Comes from us
   doc["setPoint"] = setPoint;
 
-  doc["temperature"] =  temperature;
+  doc["temperature"] = temperature;
 
   // Obs:
-  doc["relModLevel"] =   relModLevel;
-  
-  doc["pressure"] =  pressure;
-  doc["dhwTemp"] =  dhwTemp;
-  doc["tempReturn"] =  tempReturn;
-  
-  doc["burnerStarts"] =  burnerStarts;
-  doc["dhwBurnerStarts"] =  dhwBurnerStarts;
-  doc["burnerOperationHours"] =  burnerOperationHours;
-  
-  doc["setPointMax"] =  setPointMax;
+  doc["relModLevel"] = relModLevel;
+
+  doc["pressure"] = pressure;
+  doc["dhwTemp"] = dhwTemp;
+  doc["tempReturn"] = tempReturn;
+
+  doc["burnerStarts"] = burnerStarts;
+  doc["dhwBurnerStarts"] = dhwBurnerStarts;
+  doc["burnerOperationHours"] = burnerOperationHours;
+
+  doc["setPointMax"] = setPointMax;
 }
 
 //==============================================================================================================
@@ -53,12 +52,12 @@ String HousenetOpenthermElement::GetState(String channel)
   DynamicJsonDocument doc(256);
 
   doc["setpoint"] = setpoint;
-    
+
   auto status = doc.createNestedObject("reading");
 
   OTReading reading = GetReading();
   reading.WriteToJson(status);
-  
+
   String data;
   serializeJson(doc, data);
   return data;
@@ -72,19 +71,20 @@ void HousenetOpenthermElement::SetState(String channel, String value)
 OTReading HousenetOpenthermElement::GetReading()
 {
   OTReading r;
-   bool enableCentralHeating = true;
-    bool enableHotWater = true;
-    bool enableCooling = false;
+  bool enableCentralHeating = true;
+  bool enableHotWater = true;
+  bool enableCooling = false;
 
   unsigned long response = ot.setBoilerStatus(enableCentralHeating, enableHotWater, enableCooling);
-    OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
-    if (responseStatus == OpenThermResponseStatus::SUCCESS)
-    {
-    }
+  OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
+  if (responseStatus != OpenThermResponseStatus::SUCCESS)
+  {
+    throw responseStatus;
+  }
 
-      r.ch = ot.isCentralHeatingActive(response);
-      r.dhw = ot.isHotWaterActive(response);
-      r.flame = ot.isFlameOn(response);
+  r.ch = ot.isCentralHeatingActive(response);
+  r.dhw = ot.isHotWaterActive(response);
+  r.flame = ot.isFlameOn(response);
 
   r.temperature = ot.getBoilerTemperature();
 
@@ -136,96 +136,18 @@ void HousenetOpenthermElement::Process()
 
   if (new_ts - ts > 1000)
   {
-    publish("setpoint", "ok" );
+    publish("setpoint", "ok");
     ot.setBoilerTemperature(setpoint);
-    
-    // Set/Get Boiler Status
-    bool enableCentralHeating = true;
-    bool enableHotWater = true;
-    bool enableCooling = false;
 
-    OTReading thisReading;
-
-    unsigned long response = ot.setBoilerStatus(enableCentralHeating, enableHotWater, enableCooling);
-    OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
-
-
-    
-
-    if (responseStatus == OpenThermResponseStatus::SUCCESS)
+    try
     {
-      publish("ot_response", "success" );
-      thisReading.ch = ot.isCentralHeatingActive(response);
-      thisReading.dhw = ot.isHotWaterActive(response);
-      thisReading.flame = ot.isFlameOn(response);
-
-      publish("ch", thisReading.ch ? "1" : "0");
-      publish("dhw", thisReading.dhw ? "1" : "0");
-      publish("flame", thisReading.flame ? "1" : "0");
+      OTReading thisReading = GetReading();
+      publishReading(thisReading);
     }
-    if (responseStatus == OpenThermResponseStatus::NONE)
+    catch (OpenThermResponseStatus responseStatus)
     {
-      publish("ot_response", "none" );
-      Serial.println("Error: OpenTherm is not initialized");
-      return;
+       publishu16("ot_response", responseStatus);      
     }
-    else if (responseStatus == OpenThermResponseStatus::INVALID)
-    {
-      publish("ot_response", "invalid" );
-      Serial.println("Error: Invalid response " + String(response, HEX));
-      return;
-    }
-    else if (responseStatus == OpenThermResponseStatus::TIMEOUT)
-    {
-      publish("ot_response", "timeout" );
-      Serial.println("Error: Response timeout");
-      return;
-    }
-
-    // Various!
-    char data[50];
-
-    thisReading.temperature = ot.getBoilerTemperature();
-    sprintf(data, "%.2f", thisReading.temperature);
-    publish("temperature", data);
-    
-
-    thisReading.setPoint = setpoint;
-
-    //  publish_f88(OpenThermMessageID::TSet,   "ch/setpoint");
-
-    sprintf(data, "%.2f", setpoint);
-
-    publish("ch/setpoint/controller", data);
-
-    thisReading.relModLevel = publish_f88(OpenThermMessageID::RelModLevel, "modulation_rate");
-
-    thisReading.pressure = publish_f88(OpenThermMessageID::CHPressure, "ch/pressure");
-    // publish_f88(OpenThermMessageID::DHWFlowRate,  "dhw/flow_rate");
-    publish_f88(OpenThermMessageID::Tdhw, "dhw/temperature");
-    // publish_f88(OpenThermMessageID::Toutside,     "outside_temperature");
-    publish_f88(OpenThermMessageID::Tret, "ch/return_temperature"); // Negative?!
-    publish_raw(OpenThermMessageID::Tret, "ch/return_temperature/raw");
-
-    // publish_s16(OpenThermMessageID::Texhaust,         "exhaust/temperature");
-
-    publish_u16(OpenThermMessageID::BurnerStarts, "burner/starts");
-    // publish_u16(OpenThermMessageID::CHPumpStarts,             "ch/pump/starts");
-    //  publish_u16(OpenThermMessageID::DHWPumpValveStarts,       "dhw/pump_valve/starts");
-    publish_u16(OpenThermMessageID::DHWBurnerStarts, "dhw/burner/starts");
-    publish_u16(OpenThermMessageID::BurnerOperationHours, "burner/hours");
-    // publish_u16(OpenThermMessageID::CHPumpOperationHours,         "ch/pump/hours");
-    // publish_u16(OpenThermMessageID::DHWPumpValveOperationHours,   "dhw/pump_valve/hours");
-    // publish_u16(OpenThermMessageID::DHWBurnerOperationHours,      "dhw/burner/hours");
-
-    // publish_f88(OpenThermMessageID::TdhwSet,   "dhw/setpoint");
-    publish_f88(OpenThermMessageID::MaxTSet, "ch/setpoint/max");
-    // publish_f88(OpenThermMessageID::Hcratio,   "otc/heat_curve");
-
-    //  publish_f88(OpenThermMessageID::OpenThermVersionMaster,   "opentherm/master/version");
-    //  publish_f88(OpenThermMessageID::OpenThermVersionSlave,   "opentherm/slave/version");
-
-    // Temp
 
     ts = new_ts;
   }
@@ -282,7 +204,7 @@ unsigned long HousenetOpenthermElement::getRAW(OpenThermMessageID id)
 
   return 0;
 }
-
+/*
 unsigned long HousenetOpenthermElement::publish_f88(OpenThermMessageID id, const char *topic)
 {
 
@@ -306,93 +228,34 @@ unsigned long HousenetOpenthermElement::publish_f88(OpenThermMessageID id, const
     return -1;
   }
 }
-
-void HousenetOpenthermElement::publish(String name, float value)
+*/
+void HousenetOpenthermElement::publishf(String name, float value)
 {
   char data[30];
   snprintf(data, 30, "%.2f", value);
   publish(name, data);
 }
 
-void HousenetOpenthermElement::publish(String name, uint16_t value)
+void HousenetOpenthermElement::publishu16(String name, uint16_t value)
 {
   char data[30];
   snprintf(data, 30, "%u", value);
   publish(name, data);
 }
 
-void HousenetOpenthermElement::publish(String name, int16_t value) {
+void HousenetOpenthermElement::publishs16(String name, int16_t value) {
   char data[30];
   snprintf(data, 30, "%u", ot.getUInt(value));
 
-  publish(name, data);    
+  publish(name, data);
 }
 
-int16_t HousenetOpenthermElement::publish_s16(OpenThermMessageID id, const char *topic)
+void HousenetOpenthermElement::publishraw(String name, unsigned long value)
 {
+   char data[128];
+   const uint16_t u88 = value & 0xffff;
+   snprintf(data, 128, "%x %lx", u88, value);
 
-  char data[128];
-  unsigned long value = ot.sendRequest(ot.buildRequest(OpenThermMessageType::READ_DATA, id, 0));
-
-  OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
-  if (responseStatus == OpenThermResponseStatus::SUCCESS)
-  {
-
-    int16_t v2 = (int16_t)ot.getUInt(value);
-
-    // Isn't actually a temperature, doesn't really matter it's f8.8
-    snprintf(data, 128, "%d", v2);
-
-    publish(topic, data);
-    return v2;
-  }
-  else
-  {
-    snprintf(data, 128, "Channel %s Error %s", topic, ot.statusToString(responseStatus));
-    publish("error", data);
-    return -1;
-  }
+  publish(name, data);
 }
 
-unsigned long HousenetOpenthermElement::publish_u16(OpenThermMessageID id, const char *topic)
-{
-  char data[128];
-  unsigned long value = ot.sendRequest(ot.buildRequest(OpenThermMessageType::READ_DATA, id, 0));
-
-  OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
-  if (responseStatus == OpenThermResponseStatus::SUCCESS)
-  {
-
-    snprintf(data, 128, "%u", ot.getUInt(value));
-
-    publish(topic, data);
-    return value;
-  }
-  else
-  {
-    snprintf(data, 128, "Channel %s Error %s", topic, ot.statusToString(responseStatus));
-    publish("error", data);
-    return -1;
-  }
-}
-
-void HousenetOpenthermElement::publish_raw(OpenThermMessageID id, const char *topic)
-{
-
-  char data[128];
-  unsigned long value = ot.sendRequest(ot.buildRequest(OpenThermMessageType::READ_DATA, id, 0));
-
-  OpenThermResponseStatus responseStatus = ot.getLastResponseStatus();
-  if (responseStatus == OpenThermResponseStatus::SUCCESS)
-  {
-
-    snprintf(data, 128, "%x %lx", ot.getUInt(value), value);
-
-    publish(topic, data);
-  }
-  else
-  {
-    snprintf(data, 128, "Channel %s Error %s", topic, ot.statusToString(responseStatus));
-    publish("error", data);
-  }
-}
