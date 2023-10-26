@@ -42,7 +42,7 @@ class HousenetOpenthermElement : public HousenetElement {
     public:
         HousenetOpenthermElement(HousenetNode *parent, String id, uint8_t pinIn, uint8_t pinOut);
         virtual void Process();
-        virtual String GetType() {
+        virtual String GetType() const {
             return TYPE;
         }
         virtual String GetState( String channel );
@@ -53,6 +53,7 @@ class HousenetOpenthermElement : public HousenetElement {
     protected:
     
         void publishReading(OTReading& reading);
+        void PublishReadingDifferences(OTReading& oldReading, OTReading& newReading) const;
 
         int16_t       getS16(OpenThermMessageID id);
         uint16_t      getU16(OpenThermMessageID id);
@@ -65,13 +66,14 @@ class HousenetOpenthermElement : public HousenetElement {
         void          publish_raw(OpenThermMessageID id, const char* topic);
         */
         
-        void publishf(String name, float value);
-        void publishu16(String name, uint16_t value);
-        void publishs16(String name, int16_t value);
-        void publishraw(String name, unsigned long value);
+        void publishf(String name, float value) const;
+        void publishu16(String name, uint16_t value) const;
+        void publishs16(String name, int16_t value) const;
+        void publishraw(String name, unsigned long value) const;
         
     private:
         OpenTherm ot;
+        OTReading lastReading;
 
         unsigned long ts = 0, new_ts = 0; 
         float setpoint = 60;

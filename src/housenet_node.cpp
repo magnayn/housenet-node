@@ -483,6 +483,9 @@ String HousenetNode::GetStatus()
     
     doc["useMqtt"] = useMqtt;    
 
+    doc["rc"] = esp_reset_reason();
+
+
     String data;
     serializeJson(doc, data);
     return data;

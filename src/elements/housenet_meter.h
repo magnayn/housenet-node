@@ -14,7 +14,7 @@ class HousenetMeterElement : public HousenetElement {
         HousenetMeterElement(HousenetNode *parent, String id, uint8_t pin, uint32_t debounce, int mode, bool pullup);
         virtual void Process();
 
-        virtual String GetType() {
+        virtual String GetType() const {
             return TYPE;
         }
 

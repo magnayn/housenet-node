@@ -12,7 +12,7 @@ class HousenetEmonTXElement : public HousenetElement {
     public:
         HousenetEmonTXElement(HousenetNode *parent, String id);
         virtual void Process();
-        virtual String GetType() {
+        virtual String GetType() const {
             return TYPE;
         }
         virtual String GetState( String channel );

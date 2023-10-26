@@ -96,7 +96,7 @@ class HousenetElement {
 
         }
         // Override to return a type name.
-        virtual String GetType() = 0;
+        virtual String GetType() const = 0;
 
         virtual void OnMessage(String& topic, String& value) {
 
@@ -108,8 +108,8 @@ class HousenetElement {
         virtual void SetState( String channel, String data );
 
     protected:
-      bool publish(const String &topic, const String &payload);
-      bool publish(const char topic[], const char payload[], bool retained, int qos);
+      bool publish(const String &topic, const String &payload) const;
+      bool publish(const char topic[], const char payload[], bool retained, int qos) const;
 
     protected:
         HousenetNode* node;
@@ -126,7 +126,7 @@ class HousenetStateElement : public HousenetElement {
     public:
         HousenetStateElement(HousenetNode *parent, String id, uint8_t pin);
   
-        virtual String GetType() {
+        virtual String GetType() const {
             return TYPE;
         }
         virtual void Process();
@@ -147,7 +147,7 @@ class HousenetOneWireElement : public HousenetElement {
     public:
         HousenetOneWireElement(HousenetNode *parent, String id, uint8_t pin);
         virtual void Process();
-        virtual String GetType() {
+        virtual String GetType() const {
             return TYPE;
         }
     protected:
@@ -166,7 +166,7 @@ class HousenetGpioTriggerElement : public HousenetElement {
      public:
         HousenetGpioTriggerElement(HousenetNode *parent, String id, uint8_t pin, unsigned long delayMs);
         virtual void OnMessage(String& topic, String& value);
-        virtual String GetType() {
+        virtual String GetType() const {
             return TYPE;
         }
         virtual void   SetState( String channel, String data );

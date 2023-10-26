@@ -41,7 +41,6 @@ void HousenetMeterElement::OnPulseCounterEvent(const BaseSensor* pm)
 {
     Serial.println("Pulse");
     
-    m_pulse_counter++;
     m_meter.increment();
 
     char value[64];

@@ -69,6 +69,7 @@ void PulseCounter::Process()
                 if( m_function != nullptr ) {
                         m_function(this);
                     }
+                m_count++;
                 
                 m_pin_value = 0;
             } else {

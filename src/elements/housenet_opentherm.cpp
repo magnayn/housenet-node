@@ -55,7 +55,7 @@ String HousenetOpenthermElement::GetState(String channel)
 
   auto status = doc.createNestedObject("reading");
 
-  OTReading reading = GetReading();
+  OTReading reading = lastReading;
   reading.WriteToJson(status);
 
   String data;
@@ -129,24 +129,69 @@ void HousenetOpenthermElement::publishReading(OTReading &thisReading)
   publishf("ch/setpoint/max", thisReading.setPointMax);
 }
 
+void HousenetOpenthermElement::PublishReadingDifferences(OTReading &oldReading, OTReading &newReading) const
+{
+  if (oldReading.ch != newReading.ch)
+    publish("ch", newReading.ch ? "1" : "0");
+
+  if (oldReading.dhw != newReading.dhw)
+    publish("dhw", newReading.dhw ? "1" : "0");
+
+  if (oldReading.flame != newReading.flame)
+    publish("flame", newReading.flame ? "1" : "0");
+
+  if (oldReading.temperature != newReading.temperature)
+    publishf("temperature", newReading.temperature);
+
+  if (oldReading.setPoint != newReading.setPoint)
+    publishf("ch/setpoint/controller", newReading.setPoint);
+
+  if (oldReading.relModLevel != newReading.relModLevel)
+    publishf("modulation_rate", newReading.relModLevel);
+
+  if (oldReading.pressure != newReading.pressure)
+    publishf("ch/pressure", newReading.pressure);
+  if (oldReading.dhwTemp != newReading.dhwTemp)
+    publishf("dhw/temperature", newReading.dhwTemp);
+  if (oldReading.tempReturn != newReading.tempReturn)
+    publishf("ch/return_temperature", newReading.tempReturn); // Negative?!
+  if (oldReading.burnerStarts != newReading.burnerStarts)
+    publishu16("burner/starts", newReading.burnerStarts);
+  if (oldReading.dhwBurnerStarts != newReading.dhwBurnerStarts)
+    publishu16("dhw/burner/starts", newReading.dhwBurnerStarts);
+  if (oldReading.burnerOperationHours != newReading.burnerOperationHours)
+    publishu16("burner/hours", newReading.burnerOperationHours);
+  if (oldReading.setPointMax != newReading.setPointMax)
+    publishf("ch/setpoint/max", newReading.setPointMax);
+}
+
 void HousenetOpenthermElement::Process()
 {
+  static int every = 0;
+
 
   new_ts = millis();
 
   if (new_ts - ts > 1000)
   {
-    publish("setpoint", "ok");
     ot.setBoilerTemperature(setpoint);
 
     try
     {
       OTReading thisReading = GetReading();
-      publishReading(thisReading);
+      if( every++ % 60 == 0 ) {      
+        publishReading(thisReading);
+      } else {
+        PublishReadingDifferences(lastReading, thisReading);
+      }
+
+      lastReading = thisReading;
+      
+
     }
     catch (OpenThermResponseStatus responseStatus)
     {
-       publishu16("ot_response", responseStatus);      
+      publishu16("ot_response", responseStatus);
     }
 
     ts = new_ts;
@@ -229,33 +274,33 @@ unsigned long HousenetOpenthermElement::publish_f88(OpenThermMessageID id, const
   }
 }
 */
-void HousenetOpenthermElement::publishf(String name, float value)
+void HousenetOpenthermElement::publishf(String name, float value) const
 {
   char data[30];
   snprintf(data, 30, "%.2f", value);
   publish(name, data);
 }
 
-void HousenetOpenthermElement::publishu16(String name, uint16_t value)
+void HousenetOpenthermElement::publishu16(String name, uint16_t value) const
 {
   char data[30];
   snprintf(data, 30, "%u", value);
   publish(name, data);
 }
 
-void HousenetOpenthermElement::publishs16(String name, int16_t value) {
+void HousenetOpenthermElement::publishs16(String name, int16_t value) const
+{
   char data[30];
   snprintf(data, 30, "%u", ot.getUInt(value));
 
   publish(name, data);
 }
 
-void HousenetOpenthermElement::publishraw(String name, unsigned long value)
+void HousenetOpenthermElement::publishraw(String name, unsigned long value) const
 {
-   char data[128];
-   const uint16_t u88 = value & 0xffff;
-   snprintf(data, 128, "%x %lx", u88, value);
+  char data[128];
+  const uint16_t u88 = value & 0xffff;
+  snprintf(data, 128, "%x %lx", u88, value);
 
   publish(name, data);
 }
-
